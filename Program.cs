@@ -112,7 +112,9 @@ if (mode == "1")
         var basePrompt = userInput;
 
         //Build conversation history text.
-        var conversationText = BuildConversationHistory(conversationHistory);
+        var conversationText = BuildConversationHistory(conversationHistory, userInput);
+        
+        Console.WriteLine($"\nMemory context size: {conversationText.Length}");//memory diagnostics
 
         var fullPrompt = $"""
 You are a senior software engineering assistant.
@@ -740,14 +742,27 @@ string BuildSmartContext(List<string> chunks, int maxContextLength = 12000)
 //Conversation history builder.
 string BuildConversationHistory(
     List<ConversationMessage> history,
+    string currentQuery,
     int maxMessages = 6)
 {
-    var recent =
-        history.TakeLast(maxMessages);
+    var scored = history
+        .Select(m => new
+        {
+            Message = m,
+            Score = ScoreMemoryRelevance(
+                currentQuery,
+                m)
+        })
+        .OrderByDescending(x => x.Score)
+        .ThenByDescending(x =>
+            x.Message.Content.Length)
+        .Take(maxMessages)
+        .Select(x => x.Message)
+        .ToList();
 
     var builder = new StringBuilder();
 
-    foreach (var message in recent)
+    foreach (var message in scored)
     {
         builder.AppendLine(
             $"{message.Role.ToUpper()}:");
@@ -755,6 +770,15 @@ string BuildConversationHistory(
         builder.AppendLine(message.Content);
 
         builder.AppendLine();
+    }
+
+    //Prevent oversized memory injection
+    const int maxMemoryChars = 4000;
+
+    if (builder.Length > maxMemoryChars)
+    {
+        return builder.ToString()
+            .Substring(0, maxMemoryChars);
     }
 
     return builder.ToString();
@@ -785,4 +809,31 @@ void SaveConversationHistory(
         });
 
     File.WriteAllText(memoryPath, json);
+}
+
+//Memory relevance scorer.
+int ScoreMemoryRelevance(
+    string query,
+    ConversationMessage message)
+{
+    int score = 0;
+
+    var queryWords = query
+        .ToLower()
+        .Split(' ',
+            StringSplitOptions.RemoveEmptyEntries)
+        .Where(w => w.Length > 2)
+        .Distinct();
+
+    foreach (var word in queryWords)
+    {
+        if (message.Content.Contains(
+            word,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            score++;
+        }
+    }
+
+    return score;
 }
