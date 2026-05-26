@@ -11,7 +11,7 @@ namespace LocalAiClient
         private static string indexPath = @"I:\AI\indexes\code";
         private static string vectorPath = @"I:\AI\indexes\vectors";//Save vector JSON
         private static string memoryPath = @"I:\AI\memory\conversation.json";//Memory file path variable
-
+        private static string summaryPath = @"I:\AI\memory\summaries.json";
         private static readonly HttpClient http = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(10)
