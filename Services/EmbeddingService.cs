@@ -4,7 +4,11 @@ using System.Text.Json;
 
 public class EmbeddingService
 {
-    private readonly HttpClient _http = new();
+    //private readonly HttpClient _http = new();
+    private readonly HttpClient  _http = new HttpClient
+    {
+        Timeout = TimeSpan.FromMinutes(10)
+    };
 
     public async Task<float[]> GenerateEmbedding(string text)
     {
@@ -14,23 +18,23 @@ public class EmbeddingService
             prompt = text
         };
 
-        var json = JsonSerializer.Serialize(request);
+        string json = JsonSerializer.Serialize(request);
 
-        var response = await _http.PostAsync(
+        HttpResponseMessage response = await _http.PostAsync(
             "http://localhost:11434/api/embeddings",
             new StringContent(json, Encoding.UTF8, "application/json")
         );
 
-        var result = await response.Content.ReadAsStringAsync();
+        string result = await response.Content.ReadAsStringAsync();
 
         Console.WriteLine(result); // TEMP DEBUG
 
-        using var doc = JsonDocument.Parse(result);
+        using JsonDocument doc = JsonDocument.Parse(result);
 
         //
         // New Ollama format compatibility
         //
-        if (doc.RootElement.TryGetProperty("embedding", out var embeddingElement))
+        if (doc.RootElement.TryGetProperty("embedding", out JsonElement embeddingElement))
         {
             return embeddingElement
                 .EnumerateArray()
@@ -38,7 +42,7 @@ public class EmbeddingService
                 .ToArray();
         }
 
-        if (doc.RootElement.TryGetProperty("embeddings", out var embeddingsElement))
+        if (doc.RootElement.TryGetProperty("embeddings", out JsonElement embeddingsElement))
         {
             return embeddingsElement[0]
                 .EnumerateArray()
