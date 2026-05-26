@@ -1,5 +1,6 @@
 ﻿//Ignore Spelling: ollama json codellama mixtral yyyy dev codebase
 
+using LocalAiClient.Models;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -842,23 +843,21 @@ CHUNK: {x.record.ChunkIndex}
 
             return score;
         }
-    }
 
-     //Create summary generation helper
-    public static string GenerateConversationSummary(
-    List<ConversationMessage> history,
-    int maxMessages = 20)
+
+        //Create summary generation helper. This creates lightweight conversational abstraction instead of storing only raw chat logs.
+        public static string GenerateConversationSummary(List<ConversationMessage> history, int maxMessages = 20)
         {
-            var recent = history
+            List<ConversationMessage> recent = history
                 .TakeLast(maxMessages)
                 .ToList();
 
-            var builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
 
             builder.AppendLine(
                 "Conversation topics discussed:");
 
-            foreach (var message in recent)
+            foreach (ConversationMessage message in recent)
             {
                 if (message.Role == "user")
                 {
@@ -869,4 +868,44 @@ CHUNK: {x.record.ChunkIndex}
 
             return builder.ToString();
         }
+
+        //Create summary persistence helper. This allows us to maintain a high-level
+        //overview of past conversations without needing to read through entire chat logs.
+        public static void SaveConversationSummary(string summary, string summaryPath)
+        {
+            List<ConversationSummary> summaries;
+
+            if (File.Exists(summaryPath))
+            {
+                string json =
+                    File.ReadAllText(summaryPath);
+
+                summaries =
+                    JsonSerializer.Deserialize<
+                        List<ConversationSummary>>(json)
+                    ?? new();
+            }
+            else
+            {
+                summaries = new();
+            }
+
+            summaries.Add(
+                new ConversationSummary
+                {
+                    CreatedAt = DateTime.Now,
+                    Summary = summary
+                });
+
+            string output =
+                JsonSerializer.Serialize(
+                    summaries,
+                    new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+
+            File.WriteAllText(summaryPath, output);
+        }
     }
+}
