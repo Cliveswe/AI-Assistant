@@ -843,4 +843,30 @@ CHUNK: {x.record.ChunkIndex}
             return score;
         }
     }
-}
+
+     //Create summary generation helper
+    public static string GenerateConversationSummary(
+    List<ConversationMessage> history,
+    int maxMessages = 20)
+        {
+            var recent = history
+                .TakeLast(maxMessages)
+                .ToList();
+
+            var builder = new StringBuilder();
+
+            builder.AppendLine(
+                "Conversation topics discussed:");
+
+            foreach (var message in recent)
+            {
+                if (message.Role == "user")
+                {
+                    builder.AppendLine(
+                        $"- {message.Content}");
+                }
+            }
+
+            return builder.ToString();
+        }
+    }
