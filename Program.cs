@@ -104,7 +104,7 @@ namespace LocalAiClient
                         continue;
                     }
 
-                    var context = BuildSmartContext(chunks);
+                    string context = BuildSmartContext(chunks);
                     Console.WriteLine($"\nContext size: {context.Length} chars");
                     Console.WriteLine($"Chunks used: {chunks.Count}");
 
@@ -114,14 +114,17 @@ namespace LocalAiClient
                      * So fullPrompt is simply:
                      * RAG wrapper + your user request
                      */
-                    var basePrompt = userInput;
+                    string basePrompt = userInput;
 
                     //Build conversation history text.
-                    var conversationText = BuildConversationHistory(conversationHistory, userInput);
+                    string conversationText = BuildConversationHistory(conversationHistory, userInput);
 
                     Console.WriteLine($"\nMemory context size: {conversationText.Length}");//memory diagnostics
 
-                    var fullPrompt = $"""
+                    //Inject summaries into prompt.
+                    string summaryText = LoadRecentSummaries(summaryPath);
+
+                    string fullPrompt = $"""
 You are a senior software engineering assistant.
 
 STRICT RULES:
@@ -131,7 +134,10 @@ STRICT RULES:
 - Do NOT guess
 - Do NOT infer missing details
 - Be precise and concise
+LONG-TERM MEMORY:
+{summaryText}
 
+---
 CONVERSATION HISTORY:
 {conversationText}
 
