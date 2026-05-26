@@ -175,6 +175,8 @@ User request:
                     SaveConversationHistory(conversationHistory, memoryPath);//Save memory after each assistant response.
 
                     //Auto-generate summaries periodically.
+                    //Every 10 messages: generates compressed summary, persists summary to disk,
+                    //creates long-term conversational abstraction.
                     if (conversationHistory.Count % 10 == 0)
                     {
                         string summary =
@@ -921,6 +923,38 @@ CHUNK: {x.record.ChunkIndex}
                     });
 
             File.WriteAllText(summaryPath, output);
+        }
+
+        //Load summaries into prompt. This provides a way to inject high-level abstractions
+        //of past conversations, improving long-term coherence without overwhelming the model
+        //with raw chat logs.
+        public static string LoadRecentSummaries(string summaryPath, int maxSummaries = 3)
+        {
+            if (!File.Exists(summaryPath))
+                return "";
+
+            string json =
+                File.ReadAllText(summaryPath);
+
+            List<ConversationSummary>? summaries =
+                JsonSerializer.Deserialize<
+                    List<ConversationSummary>>(json);
+
+            if (summaries == null)
+                return "";
+
+            IEnumerable<ConversationSummary> recent = summaries
+                .TakeLast(maxSummaries);
+
+            StringBuilder builder = new StringBuilder();
+
+            foreach (ConversationSummary summary in recent)
+            {
+                builder.AppendLine(summary.Summary);
+                builder.AppendLine("\n---\n");
+            }
+
+            return builder.ToString();
         }
     }
 }
