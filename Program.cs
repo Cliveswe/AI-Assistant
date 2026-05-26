@@ -505,7 +505,7 @@ RESPONSE:
                 }
             }
 
-            var selected = scored
+            List<string> selected = scored
                 .OrderByDescending(x => x.score)
                 .Take(maxExpanded)
                 .Select(x => x.content)
