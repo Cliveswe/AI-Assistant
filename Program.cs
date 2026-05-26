@@ -174,6 +174,21 @@ User request:
 
                     SaveConversationHistory(conversationHistory, memoryPath);//Save memory after each assistant response.
 
+                    //Auto-generate summaries periodically.
+                    if (conversationHistory.Count % 10 == 0)
+                    {
+                        string summary =
+                            GenerateConversationSummary(
+                                conversationHistory);
+
+                        SaveConversationSummary(
+                            summary,
+                            summaryPath);
+
+                        Console.WriteLine(
+                            "\nConversation summary created.");
+                    }
+
                     Console.WriteLine("\n--- RESPONSE ---");
                     Console.WriteLine(responseText);
 
