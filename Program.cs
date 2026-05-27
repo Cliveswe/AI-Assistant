@@ -962,5 +962,52 @@ CHUNK: {x.record.ChunkIndex}
 
             return builder.ToString();
         }
+
+        //Create memory categorization helper. This allows us to
+        //organise conversational knowledge into categories, enabling
+        //more targeted retrieval and context injection based on
+        //the user's current needs. This creates: topic routing for memory organisation.
+        public static string CategorizeMessage(string text)
+        {
+            string input = text.ToLower();
+
+            if (input.Contains("controller") ||
+                input.Contains("route") ||
+                input.Contains("endpoint"))
+            {
+                return "web";
+            }
+
+            if (input.Contains("service") ||
+                input.Contains("dependency injection") ||
+                input.Contains("singleton"))
+            {
+                return "services";
+            }
+
+            if (input.Contains("authentication") ||
+                input.Contains("authorization") ||
+                input.Contains("jwt"))
+            {
+                return "security";
+            }
+
+            if (input.Contains("database") ||
+                input.Contains("sql") ||
+                input.Contains("entity framework"))
+            {
+                return "database";
+            }
+
+            if (input.Contains("architecture") ||
+                input.Contains("design") ||
+                input.Contains("pattern"))
+            {
+                return "architecture";
+            }
+
+            return "general";
+        }
+
     }
 }
