@@ -59,6 +59,8 @@ namespace LocalAiClient
                 activeProject = "default";
             }
 
+            Console.WriteLine($"Active project: {activeProject}");
+
             if (mode == "1")
             {
                 Console.WriteLine("Local AI Client");
