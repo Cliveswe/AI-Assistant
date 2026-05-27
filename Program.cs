@@ -324,6 +324,8 @@ PROMPT:
 RESPONSE:
 {response}
 
+PROJECT:
+{activeProject}
 ----------------------------------------
 ";
 
