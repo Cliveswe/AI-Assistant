@@ -1009,5 +1009,27 @@ CHUNK: {x.record.ChunkIndex}
             return "general";
         }
 
+        //Create categorised memory builder. This structures conversational memory into categories, allowing
+        //for more efficient retrieval and context management based on the user's current focus or needs.
+        public static Dictionary<string, List<ConversationMessage>> BuildCategorizedMemory(List<ConversationMessage> history)
+        {
+            var categorized = new Dictionary<string, List<ConversationMessage>>();
+
+            foreach (ConversationMessage message in history)
+            {
+                var category =
+                    CategorizeMessage(message.Content);
+
+                if (!categorized.ContainsKey(category))
+                {
+                    categorized[category] = new List<ConversationMessage>();
+                }
+
+                categorized[category]
+                    .Add(message);
+            }
+
+            return categorized;
+        }
     }
 }
