@@ -374,7 +374,7 @@ PROJECT:
         }
 
         //Read and chunk files.
-        private static List<string> ChunkFile(string content, int maxChunkSize = 1200)
+        private static List<string> ChunkFile(string content, int maxChunkSize = 1500)
         {
             List<string> chunks = new List<string>();
 
