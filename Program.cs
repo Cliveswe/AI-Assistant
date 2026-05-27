@@ -1017,8 +1017,7 @@ CHUNK: {x.record.ChunkIndex}
 
             foreach (ConversationMessage message in history)
             {
-                var category =
-                    CategorizeMessage(message.Content);
+                string category = CategorizeMessage(message.Content);
 
                 if (!categorized.ContainsKey(category))
                 {
