@@ -119,6 +119,7 @@ namespace LocalAiClient
                     //Build conversation history text.
                     string conversationText = BuildConversationHistory(conversationHistory, userInput);
 
+                    Console.WriteLine($"Memory category: {CategorizeMessage(userInput)}");//category diagnostics
                     Console.WriteLine($"\nMemory context size: {conversationText.Length}");//memory diagnostics
 
                     //Inject summaries into prompt.
