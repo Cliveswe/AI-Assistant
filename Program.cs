@@ -1030,5 +1030,27 @@ CHUNK: {x.record.ChunkIndex}
 
             return categorized;
         }
+
+        //Create relevant category selector. This allows us to dynamically select and
+        //inject the most relevant subset of conversational memory based on the user's
+        //current query, improving context relevance and response quality.
+        public static List<ConversationMessage>GetRelevantCategoryMemory(
+           string query, List<ConversationMessage> history, int maxMessages = 6)
+        {
+            string targetCategory =
+                CategorizeMessage(query);
+
+            Dictionary<string, List<ConversationMessage>> categorized = 
+                BuildCategorizedMemory(history);
+
+            if (!categorized.ContainsKey(targetCategory))
+            {
+                return new();
+            }
+
+            return categorized[targetCategory]
+                .TakeLast(maxMessages)
+                .ToList();
+        }
     }
 }
