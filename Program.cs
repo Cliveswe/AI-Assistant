@@ -46,7 +46,18 @@ namespace LocalAiClient
             Console.WriteLine("1 = Chat");
             Console.WriteLine("2 = Index code");
             Console.Write("Choice: ");
-            var mode = Console.ReadLine();
+            string? mode = Console.ReadLine();
+
+            //Add active project selection. This allows us to maintain
+            //separate indexes and memories for different codebases, improving
+            //relevance and organisation.
+            Console.Write("Project name: ");
+            string? activeProject = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(activeProject))
+            {
+                activeProject = "default";
+            }
 
             if (mode == "1")
             {
