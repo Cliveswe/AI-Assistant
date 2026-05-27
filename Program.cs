@@ -11,8 +11,8 @@ namespace LocalAiClient
         private static string repoPath = @"I:\dev\myProjects";
         private static string indexPath = @"I:\AI\indexes\code";
         private static string vectorPath = @"I:\AI\indexes\vectors";//Save vector JSON
-        private static string memoryPath = @"I:\AI\memory\conversation.json";//Memory file path variable
-        private static string summaryPath = @"I:\AI\memory\summaries.json";
+        private static string memoryPath = $@"I:\AI\memory\{activeProject}\conversation.json";//Create project memory directory
+        private static string summaryPath = $@"I:\AI\memory\{activeProject}\summaries.json";
         private static readonly HttpClient http = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(10)
@@ -24,7 +24,7 @@ namespace LocalAiClient
 
             if (File.Exists(memoryPath))
             {
-                var memoryJson =
+                string memoryJson =
                     File.ReadAllText(memoryPath);
 
                 conversationHistory =
