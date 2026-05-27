@@ -768,33 +768,22 @@ CHUNK: {x.record.ChunkIndex}
             return builder.ToString();
         }
 
-        //Conversation history builder.
+        //Conversation history builder. This constructs a relevant subset of past
+        //conversation to inject into the prompt, providing context and continuity
+        //while respecting token limits. It uses relevance scoring to select the most
+        //pertinent messages based on the current user query.
         private static string BuildConversationHistory(
             List<ConversationMessage> history,
             string currentQuery,
             int maxMessages = 6)
         {
-            var scored = history
-                .Select(m => new
-                {
-                    Message = m,
-                    Score = ScoreMemoryRelevance(
-                        currentQuery,
-                        m)
-                })
-                .OrderByDescending(x => x.Score)
-                .ThenByDescending(x =>
-                    x.Message.Content.Length)
-                .Take(maxMessages)
-                .Select(x => x.Message)
-                .ToList();
+            List<ConversationMessage> relevantMessages = GetRelevantCategoryMemory(currentQuery, history, maxMessages);
 
-            var builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
 
-            foreach (var message in scored)
+            foreach (var message in relevantMessages)
             {
-                builder.AppendLine(
-                    $"{message.Role.ToUpper()}:");
+                builder.AppendLine($"{message.Role.ToUpper()}:");
 
                 builder.AppendLine(message.Content);
 
