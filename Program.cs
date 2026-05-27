@@ -9,7 +9,7 @@ namespace LocalAiClient
     public static class Program
     {
         private static string repoPath = @"I:\dev\myProjects";
-        private static string indexPath = @"I:\AI\indexes\code";
+        private static string indexPath = $@"I:\AI\indexes\{activeProject}";
         private static string vectorPath = @"I:\AI\indexes\vectors";//Save vector JSON
         private static string memoryPath = $@"I:\AI\memory\{activeProject}\conversation.json";//Create project memory directory
         private static string summaryPath = $@"I:\AI\memory\{activeProject}\summaries.json";
