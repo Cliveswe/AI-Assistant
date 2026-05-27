@@ -227,11 +227,11 @@ User request:
 
             if (mode == "2")
             {
-
-
-                var files = GetCodeFiles(repoPath);
+                List<string> files = GetCodeFiles(repoPath);
 
                 int fileCounter = 0;
+
+                Console.WriteLine($"Indexing project: {activeProject}");
 
                 foreach (var file in files)
                 {
