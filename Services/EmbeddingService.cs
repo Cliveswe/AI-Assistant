@@ -32,6 +32,15 @@ public class EmbeddingService
         using JsonDocument doc = JsonDocument.Parse(result);
 
         //
+        // Detect Ollama errors FIRST
+        //
+        if (doc.RootElement.TryGetProperty("error", out JsonElement error))
+        {
+            throw new Exception(
+                $"Ollama embedding error: {error.GetString()}");
+        }
+
+        //
         // New Ollama format compatibility
         //
         if (doc.RootElement.TryGetProperty("embedding", out JsonElement embeddingElement))

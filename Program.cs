@@ -24,6 +24,36 @@ namespace LocalAiClient
         };
         private static async Task Main()
         {
+
+            Console.WriteLine("Select mode:");
+            Console.WriteLine("1 = Chat");
+            Console.WriteLine("2 = Index code");
+            Console.Write("Choice: ");
+            string? mode = Console.ReadLine();
+
+            //Add active project selection. This allows us to maintain
+            //separate indexes and memories for different codebases, improving
+            //relevance and organisation.
+            Console.Write("Project name: ");
+            activeProject = Console.ReadLine();
+
+
+            if (string.IsNullOrWhiteSpace(activeProject))
+            {
+                activeProject = "default";
+            }
+
+            Console.Write("Repository path: ");
+            repoPath = Console.ReadLine()!;
+
+            indexPath = $@"I:\AI\indexes\{activeProject}";
+            vectorPath = $@"I:\AI\indexes\vectors\{activeProject}";
+            memoryPath = $@"I:\AI\memory\{activeProject}\conversation.json";
+            summaryPath = $@"I:\AI\memory\{activeProject}\summaries.json";
+
+            Console.WriteLine($"Active project: {activeProject}");
+
+
             //Checks for saved memory. Reloads previous session. Restores conversation continuity.
             List<ConversationMessage> conversationHistory;
 
@@ -46,25 +76,6 @@ namespace LocalAiClient
                 conversationHistory =
                     new List<ConversationMessage>();
             }
-
-            Console.WriteLine("Select mode:");
-            Console.WriteLine("1 = Chat");
-            Console.WriteLine("2 = Index code");
-            Console.Write("Choice: ");
-            string? mode = Console.ReadLine();
-
-            //Add active project selection. This allows us to maintain
-            //separate indexes and memories for different codebases, improving
-            //relevance and organisation.
-            Console.Write("Project name: ");
-            string? activeProject = Console.ReadLine();
-
-            if (string.IsNullOrWhiteSpace(activeProject))
-            {
-                activeProject = "default";
-            }
-
-            Console.WriteLine($"Active project: {activeProject}");
 
             if (mode == "1")
             {
@@ -363,31 +374,41 @@ PROJECT:
         }
 
         //Read and chunk files.
-        private static List<string> ChunkFile(string content, int maxChunkSize = 2000)
+        private static List<string> ChunkFile(string content, int maxChunkSize = 1200)
         {
-            var chunks = new List<string>();
+            List<string> chunks = new List<string>();
 
-            var lines = content.Split('\n');
+            string[] lines = content.Split('\n');
 
-            var current = new StringBuilder();
+            StringBuilder current = new StringBuilder();
 
             foreach (var line in lines)
             {
                 //
-                // If adding this line exceeds chunk size,
-                // finalize current chunk first.
+                // Hard-stop huge lines
                 //
-                if (current.Length + line.Length > maxChunkSize)
+                var safeLine = line.Length > 300
+                    ? line.Substring(0, 300)
+                    : line;
+
+                //
+                // If next line exceeds chunk size,
+                // finalize current chunk
+                //
+                if (current.Length + safeLine.Length > maxChunkSize)
                 {
-                    chunks.Add(current.ToString());
-                    current.Clear();
+                    if (current.Length > 0)
+                    {
+                        chunks.Add(current.ToString());
+                        current.Clear();
+                    }
                 }
 
-                current.AppendLine(line);
+                current.AppendLine(safeLine);
             }
 
             //
-            // Add final chunk
+            // Final chunk
             //
             if (current.Length > 0)
             {
@@ -400,9 +421,14 @@ PROJECT:
         //Create simple retrieval function.
         private static List<string> RetrieveRelevantChunks(string query, string indexPath, int maxChunks = 3)
         {
-            var files = Directory.GetFiles(indexPath, "*.txt");
+            if (!Directory.Exists(vectorPath))
+            {
+                return new List<string>();
+            }
 
-            var results = new List<(string content, int score)>();
+            string[] files = Directory.GetFiles(indexPath, "*.txt");
+
+            List<(string content, int score)> results = new List<(string content, int score)>();
 
             foreach (var file in files)
             {
@@ -602,6 +628,11 @@ PROJECT:
             //
             var queryEmbedding =
                 await embeddingService.GenerateEmbedding(query);
+
+            if (!Directory.Exists(vectorPath))
+            {
+                return new List<string>();
+            }
 
             //
             // Load vector files
