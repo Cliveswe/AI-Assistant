@@ -8,6 +8,11 @@ namespace LocalAiClient
 {
     public static class Program
     {
+        //Active project variable to maintain context across the application.
+        //This allows us to keep separate indexes, memories, and summaries for
+        //different codebases, improving relevance and organization.
+        private static string? activeProject;
+        
         private static string repoPath = @"I:\dev\myProjects";
         private static string indexPath = $@"I:\AI\indexes\{activeProject}";
         private static string vectorPath = @"I:\AI\indexes\vectors";//Save vector JSON
