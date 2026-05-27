@@ -148,6 +148,12 @@ STRICT RULES:
 - Do NOT guess
 - Do NOT infer missing details
 - Be precise and concise
+
+ACTIVE PROJECT:
+{activeProject}
+
+---
+
 LONG-TERM MEMORY:
 {summaryText}
 
