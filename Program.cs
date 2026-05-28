@@ -10,9 +10,11 @@ using System.Text.Json.Nodes;
 
 namespace LocalAiClient
 {
-    private static RetrievalService retrievalService = new RetrievalService();
     public static class Program
     {
+
+        private static RetrievalService retrievalService = new RetrievalService();
+
         //Active project variable to maintain context across the application.
         //This allows us to keep separate indexes, memories, and summaries for
         //different codebases, improving relevance and organization.
@@ -465,7 +467,7 @@ PATH: {file}
 
             return chunks;
         }
-              
+
         //Basic hallucination detection (lightweight)
         private static bool LooksLikeHallucination(string response)
         {
@@ -681,8 +683,8 @@ CHUNK: {x.record.ChunkIndex}
             //
             // Keyword retrieval
             //
-            var keywordChunks =
-                RetrieveRelevantChunks(query, indexPath, maxChunks);
+            var keywordChunks = retrievalService
+                .RetrieveRelevantChunks(query, indexPath, maxChunks);
 
             //
             // Semantic retrieval
