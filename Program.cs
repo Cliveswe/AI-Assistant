@@ -6,8 +6,11 @@ using LocalAIClient.Services;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+
+
 namespace LocalAiClient
 {
+    private static RetrievalService retrievalService = new RetrievalService();
     public static class Program
     {
         //Active project variable to maintain context across the application.
@@ -462,8 +465,7 @@ PATH: {file}
 
             return chunks;
         }
-
-      
+              
         //Basic hallucination detection (lightweight)
         private static bool LooksLikeHallucination(string response)
         {
