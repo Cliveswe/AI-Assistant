@@ -7,7 +7,8 @@ public class PromptOrchestrationService
         string context,
         string conversationText,
         string summaryText,
-        string activeProject)
+        string activeProject,
+        string model)
     {
 
         const int maxContextChars = 12000;
