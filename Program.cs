@@ -12,12 +12,12 @@ namespace LocalAiClient
         //This allows us to keep separate indexes, memories, and summaries for
         //different codebases, improving relevance and organization.
         private static string? activeProject;
-        
-        private static string repoPath = @"I:\dev\myProjects";
-        private static string indexPath = $@"I:\AI\indexes\{activeProject}";
-        private static string vectorPath = @"I:\AI\indexes\vectors";//Save vector JSON
-        private static string memoryPath = $@"I:\AI\memory\{activeProject}\conversation.json";//Create project memory directory
-        private static string summaryPath = $@"I:\AI\memory\{activeProject}\summaries.json";
+
+        private static string repoPath = "";
+        private static string indexPath = "";
+        private static string vectorPath = "";
+        private static string memoryPath = "";
+        private static string summaryPath = "";
         private static readonly HttpClient http = new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(10)
@@ -34,17 +34,17 @@ namespace LocalAiClient
             //Add active project selection. This allows us to maintain
             //separate indexes and memories for different codebases, improving
             //relevance and organisation.
-            Console.Write("Project name: ");
-            activeProject = Console.ReadLine();
-
-
-            if (string.IsNullOrWhiteSpace(activeProject))
-            {
-                activeProject = "default";
-            }
-
             Console.Write("Repository path: ");
             repoPath = Console.ReadLine()!;
+
+            if (string.IsNullOrWhiteSpace(repoPath) || !Directory.Exists(repoPath))
+            {
+                Console.WriteLine("Invalid repository path.");
+                return;
+            }
+
+            // Automatically derive project name
+            activeProject = new DirectoryInfo(repoPath).Name;
 
             indexPath = $@"I:\AI\indexes\{activeProject}";
             vectorPath = $@"I:\AI\indexes\vectors\{activeProject}";
@@ -52,7 +52,11 @@ namespace LocalAiClient
             summaryPath = $@"I:\AI\memory\{activeProject}\summaries.json";
 
             Console.WriteLine($"Active project: {activeProject}");
-
+            Console.WriteLine($"RepoPath: {repoPath}");
+            Console.WriteLine($"IndexPath: {indexPath}");
+            Console.WriteLine($"VectorPath: {vectorPath}");
+            Console.WriteLine($"MemoryPath: {memoryPath}");
+            Console.WriteLine($"SummaryPath: {summaryPath}");
 
             //Checks for saved memory. Reloads previous session. Restores conversation continuity.
             List<ConversationMessage> conversationHistory;
@@ -123,7 +127,12 @@ namespace LocalAiClient
                         Console.WriteLine("------");
                     }
 
-                    Console.WriteLine($"Files indexed: {Directory.GetFiles(indexPath, "*.txt").Length}");
+                    int indexedFiles = Directory.Exists(indexPath)
+                        ? Directory.GetFiles(indexPath, "*.txt").Length
+                        : 0;
+
+                    Console.WriteLine($"Files indexed: {indexedFiles}");
+
                     //This prevents worst case hallucination.
                     if (chunks.Count == 0)
                     {
@@ -195,17 +204,17 @@ User request:
                         stream = false
                     };
 
-                    var json = JsonSerializer.Serialize(request);
+                    string json = JsonSerializer.Serialize(request);
 
-                    var response = await http.PostAsync(
+                    HttpResponseMessage response = await http.PostAsync(
                         "http://localhost:11434/api/generate",
                         new StringContent(json, Encoding.UTF8, "application/json")
                     );
 
-                    var result = await response.Content.ReadAsStringAsync();
+                    string result = await response.Content.ReadAsStringAsync();
 
-                    var jsonNode = JsonNode.Parse(result);
-                    var responseText = jsonNode?["response"]?.ToString();
+                    JsonNode? jsonNode = JsonNode.Parse(result);
+                    string? responseText = jsonNode?["response"]?.ToString();
 
                     //Save assistant responses.
                     conversationHistory.Add(new ConversationMessage
@@ -249,6 +258,17 @@ User request:
 
             if (mode == "2")
             {
+
+                if (Directory.Exists(indexPath))
+                {
+                    Directory.Delete(indexPath, true);
+                }
+
+                if (Directory.Exists(vectorPath))
+                {
+                    Directory.Delete(vectorPath, true);
+                }
+
                 List<string> files = GetCodeFiles(repoPath);
 
                 int fileCounter = 0;
@@ -272,7 +292,15 @@ User request:
 
                         //Add embedding generation to indexing mode
                         Directory.CreateDirectory(indexPath);
-                        File.WriteAllText(fullPath, chunkContent);
+                        var enrichedChunk = $"""
+FILE: {Path.GetFileName(file)}
+PATH: {file}
+
+
+{chunkContent}
+""";
+
+                        File.WriteAllText(fullPath, enrichedChunk);
 
                         //
                         // Generate embedding
@@ -365,11 +393,46 @@ PROJECT:
         //Build simple file scanner.
         private static List<string> GetCodeFiles(string rootPath)
         {
-            var extensions = new[] { ".cs", ".js", ".ts", ".html", ".css", ".cpp", ".h" };
+            var extensions = new[]
+            {
+        ".cs",
+        ".js",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".html",
+        ".css",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".py",
+        ".java"
+    };
+
+            var ignoredFolders = new[]
+            {
+        "\\bin\\",
+        "\\obj\\",
+        "\\node_modules\\",
+        "\\dist\\",
+        "\\build\\",
+        "\\packages\\",
+        "\\wwwroot\\lib\\",
+        "\\.git\\",
+        "\\coverage\\",
+        "\\vendor\\"
+    };
 
             return Directory
                 .GetFiles(rootPath, "*.*", SearchOption.AllDirectories)
-                .Where(f => extensions.Contains(Path.GetExtension(f)))
+                .Where(f =>
+                    extensions.Contains(
+                        Path.GetExtension(f),
+                        StringComparer.OrdinalIgnoreCase))
+                .Where(f =>
+                    !ignoredFolders.Any(ignore =>
+                        f.Contains(ignore,
+                            StringComparison.OrdinalIgnoreCase)))
                 .ToList();
         }
 
@@ -421,7 +484,7 @@ PROJECT:
         //Create simple retrieval function.
         private static List<string> RetrieveRelevantChunks(string query, string indexPath, int maxChunks = 3)
         {
-            if (!Directory.Exists(vectorPath))
+            if (!Directory.Exists(indexPath))
             {
                 return new List<string>();
             }
@@ -444,11 +507,11 @@ PROJECT:
                 foreach (var word in words)
                 {
                     if (content.Contains(word, StringComparison.OrdinalIgnoreCase))
-                        score += 1;
+                        score += 15;
 
                     // 3.5.2 improvement: boost class-level relevance
                     if (content.Contains("class " + word, StringComparison.OrdinalIgnoreCase))
-                        score += 2;
+                        score += 20;
                 }
 
                 //Penalize overly large chunks
@@ -697,8 +760,18 @@ CHUNK: {x.record.ChunkIndex}
             string query,
             string indexPath,
             string vectorPath,
-            int maxChunks = 5)
+            int maxChunks = 25)
         {
+            if (query.Contains("all controllers", StringComparison.OrdinalIgnoreCase))
+            {
+                maxChunks = 50;
+            }
+
+            if (query.Contains("list", StringComparison.OrdinalIgnoreCase))
+            {
+                maxChunks = 40;
+            }
+
             //
             // Keyword retrieval
             //
@@ -1081,13 +1154,13 @@ CHUNK: {x.record.ChunkIndex}
         //Create relevant category selector. This allows us to dynamically select and
         //inject the most relevant subset of conversational memory based on the user's
         //current query, improving context relevance and response quality.
-        public static List<ConversationMessage>GetRelevantCategoryMemory(
+        public static List<ConversationMessage> GetRelevantCategoryMemory(
            string query, List<ConversationMessage> history, int maxMessages = 6)
         {
             string targetCategory =
                 CategorizeMessage(query);
 
-            Dictionary<string, List<ConversationMessage>> categorized = 
+            Dictionary<string, List<ConversationMessage>> categorized =
                 BuildCategorizedMemory(history);
 
             if (!categorized.ContainsKey(targetCategory))
