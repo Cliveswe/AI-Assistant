@@ -256,7 +256,7 @@ User request:
                         Console.WriteLine("⚠️ Warning: response may contain speculation.");
                     }
                     Console.WriteLine();
-                    Log(model, fullPrompt, responseText);
+                    loggingService.Log(activeProject, model, fullPrompt, responseText ?? "");
                 }
             }
 
