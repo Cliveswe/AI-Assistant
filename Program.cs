@@ -180,7 +180,8 @@ namespace LocalAiClient
                         context,
                         conversationText,
                         summaryText,
-                        activeProject);
+                        activeProject,
+                        model);
 
                     var request = new
                     {
