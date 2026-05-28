@@ -1,4 +1,6 @@
-﻿public class RetrievedChunk
+﻿namespace LocalAIClient.Models;
+
+public class RetrievedChunk
 {
     public string Content { get; set; } = "";
 

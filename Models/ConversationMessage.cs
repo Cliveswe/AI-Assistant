@@ -1,4 +1,6 @@
-﻿public class ConversationMessage
+﻿namespace LocalAIClient.Models;
+
+public class ConversationMessage
 {
     public string Role { get; set; } = "";
 

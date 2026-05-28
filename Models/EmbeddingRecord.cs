@@ -1,3 +1,5 @@
+namespace LocalAIClient.Models;
+
 public class EmbeddingRecord
 {
     public string FileName { get; set; } = "";

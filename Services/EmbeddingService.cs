@@ -2,6 +2,8 @@
 using System.Text;
 using System.Text.Json;
 
+namespace LocalAIClient.Services;
+
 public class EmbeddingService
 {
     //private readonly HttpClient _http = new();
