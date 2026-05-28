@@ -1,6 +1,7 @@
 ﻿//Ignore Spelling: ollama json codellama mixtral yyyy dev codebase
 
 using LocalAiClient.Models;
+using LocalAIClient.Services;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
