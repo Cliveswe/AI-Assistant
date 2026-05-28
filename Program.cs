@@ -2,6 +2,7 @@
 
 using LocalAiClient.Models;
 using LocalAiClient.Services;
+using LocalAIClient.Models;
 using LocalAIClient.Services;
 using System.Text;
 using System.Text.Json;
