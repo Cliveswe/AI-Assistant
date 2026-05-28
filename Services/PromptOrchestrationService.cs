@@ -56,6 +56,9 @@ STRICT RULES:
 - Be precise and concise
 - Reference filenames when possible
 
+{modelRules}
+---
+
 ACTIVE PROJECT:
 {activeProject}
 
