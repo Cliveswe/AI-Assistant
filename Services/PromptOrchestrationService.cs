@@ -9,6 +9,15 @@ public class PromptOrchestrationService
         string summaryText,
         string activeProject)
     {
+
+        const int maxContextChars = 12000;
+
+        if (context.Length > maxContextChars)
+        {
+            context =
+                context.Substring(0, maxContextChars);
+        }
+
         return $"""
 You are a senior software engineering assistant.
 
