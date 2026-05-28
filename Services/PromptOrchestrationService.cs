@@ -19,6 +19,31 @@ public class PromptOrchestrationService
                 context.Substring(0, maxContextChars);
         }
 
+        var modelRules = model switch
+        {
+            "codellama:13b" =>
+        """
+MODEL RULES:
+- Prioritize code correctness
+- Prefer implementation detail
+- Explain code clearly
+""",
+
+            "mixtral" =>
+        """
+MODEL RULES:
+- Prioritize reasoning depth
+- Explain architectural tradeoffs
+- Analyze carefully
+""",
+
+            _ =>
+        """
+MODEL RULES:
+- Be concise and practical
+"""
+        };
+
         return $"""
 You are a senior software engineering assistant.
 
