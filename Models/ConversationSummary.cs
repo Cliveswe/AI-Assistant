@@ -1,4 +1,4 @@
-﻿namespace LocalAiClient.Models;
+﻿namespace LocalAIClient.Models;
 
 public class ConversationSummary
 {

@@ -1,7 +1,7 @@
 ﻿
 using LocalAIClient.Models;
 
-namespace LocalAiClient.Models;
+namespace LocalAIClient.Models;
 
 //Create memory category model to organised conversational knowledge.
 public class CategorizedMemory

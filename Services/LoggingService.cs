@@ -1,4 +1,4 @@
-﻿namespace LocalAiClient.Services;
+﻿namespace LocalAIClient.Services;
 
 public class LoggingService
 {
@@ -8,6 +8,9 @@ public class LoggingService
         string prompt,
         string response)
     {
+
+        Console.WriteLine("DEBUG: Entered LoggingService.Log()");
+
         var logPath =
             Path.Combine("logs", "chatlog.txt");
 
@@ -28,5 +31,7 @@ RESPONSE:
 ";
 
         File.AppendAllText(logPath, entry);
+
+        Console.WriteLine($"DEBUG: Log written to {Path.GetFullPath(logPath)}");
     }
 }

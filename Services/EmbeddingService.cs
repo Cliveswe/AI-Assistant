@@ -1,4 +1,3 @@
-//Ignore Spelling: nomic json ollama
 using System.Text;
 using System.Text.Json;
 
@@ -7,7 +6,7 @@ namespace LocalAIClient.Services;
 public class EmbeddingService
 {
     //private readonly HttpClient _http = new();
-    private readonly HttpClient  _http = new HttpClient
+    private static readonly HttpClient  _http = new HttpClient
     {
         Timeout = TimeSpan.FromMinutes(10)
     };
@@ -27,11 +26,30 @@ public class EmbeddingService
             new StringContent(json, Encoding.UTF8, "application/json")
         );
 
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception(
+                $"Ollama request failed: {(int)response.StatusCode} {response.ReasonPhrase}");
+        } 
+
         string result = await response.Content.ReadAsStringAsync();
 
-        Console.WriteLine(result); // TEMP DEBUG
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            throw new Exception("Empty response from Ollama.");
+        }
 
-        using JsonDocument doc = JsonDocument.Parse(result);
+        JsonDocument doc;
+
+        try
+        {
+            doc = JsonDocument.Parse(result);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(
+                $"Failed to parse Ollama response: {ex.Message}");
+        }
 
         //
         // Detect Ollama errors FIRST

@@ -1,4 +1,4 @@
-﻿namespace LocalAiClient.Services;
+﻿namespace LocalAIClient.Services;
 
 //Create simple retrieval function.
 public class RetrievalService
@@ -21,7 +21,9 @@ public class RetrievalService
             int score = 0;
 
             var words = query
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Split(
+                [' ', '\n', '\r', '\t', '.', ',', ':', ';', '(', ')'],
+                StringSplitOptions.RemoveEmptyEntries)
                 .Where(w => w.Length > 2)
                 .Distinct();
 

@@ -1,7 +1,5 @@
 ﻿//Ignore Spelling: ollama json codellama mixtral yyyy dev codebase
 
-using LocalAiClient.Models;
-using LocalAiClient.Services;
 using LocalAIClient.Models;
 using LocalAIClient.Services;
 using System.Text;
@@ -9,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 
 
-namespace LocalAiClient
+namespace LocalAIClient
 {
     public static class Program
     {
@@ -31,6 +29,8 @@ namespace LocalAiClient
         {
             Timeout = TimeSpan.FromMinutes(10)
         };
+
+        private static readonly int MaxConversationMessages = 50;
 
         private static LoggingService loggingService = new LoggingService();
 
@@ -128,6 +128,14 @@ namespace LocalAiClient
                         Role = "user",
                         Content = userInput
                     });
+
+                    if (conversationHistory.Count > MaxConversationMessages)
+                    {
+                        conversationHistory =
+                            conversationHistory
+                                .TakeLast(MaxConversationMessages)
+                                .ToList();
+                    }
                     var chunks = await RetrieveHybridChunks(userInput, indexPath, vectorPath);
 
                     // DEBUG OUTPUT (Phase 3.6.4.2)
@@ -191,56 +199,99 @@ namespace LocalAiClient
                     };
 
                     string json = JsonSerializer.Serialize(request);
-
-                    HttpResponseMessage response = await http.PostAsync(
-                        "http://localhost:11434/api/generate",
-                        new StringContent(json, Encoding.UTF8, "application/json")
-                    );
-
-                    string result = await response.Content.ReadAsStringAsync();
-
-                    JsonNode? jsonNode = JsonNode.Parse(result);
-                    string? responseText = jsonNode?["response"]?.ToString();
-
-                    //Save assistant responses.
-                    conversationHistory.Add(new ConversationMessage
+                    try
                     {
-                        Role = "assistant",
-                        Content = responseText ?? ""
-                    });
+                        HttpResponseMessage response = await http.PostAsync(
+                            "http://localhost:11434/api/generate",
+                            new StringContent(json, Encoding.UTF8, "application/json")
+ );
 
-                    SaveConversationHistory(conversationHistory, memoryPath);//Save memory after each assistant response.
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            throw new Exception(
+                                $"Ollama generate failed: {(int)response.StatusCode} {response.ReasonPhrase}");
+                        }
 
-                    //Auto-generate summaries periodically.
-                    //Every 10 messages: generates compressed summary, persists summary to disk,
-                    //creates long-term conversational abstraction.
-                    if (conversationHistory.Count % 10 == 0)
-                    {
-                        string summary =
-                            GenerateConversationSummary(
-                                conversationHistory);
+                        string result = await response.Content.ReadAsStringAsync();
+                        
+                        Console.WriteLine("DEBUG: Raw Ollama response:");
+                        Console.WriteLine(result);
 
-                        SaveConversationSummary(
-                            summary,
-                            summaryPath);
 
-                        Console.WriteLine(
-                            "\nConversation summary created.");
+                        if (string.IsNullOrWhiteSpace(result))
+                        {
+                            throw new Exception("Empty response from Ollama generate API.");
+                        }
+
+                        JsonNode? jsonNode;
+
+                        try
+                        {
+                            jsonNode = JsonNode.Parse(result);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new Exception(
+                                $"Failed to parse generate response: {ex.Message}");
+                        }
+
+                        string? responseText = jsonNode?["response"]?.ToString();
+
+                        responseText ??= "No response returned.";
+
+                        //Save assistant responses.
+                        conversationHistory.Add(new ConversationMessage
+                        {
+                            Role = "assistant",
+                            Content = responseText ?? ""
+                        });
+
+                        const int maxMessages = 50;
+
+                        if (conversationHistory.Count > maxMessages)
+                        {
+                            conversationHistory =
+                                conversationHistory
+                                    .TakeLast(maxMessages)
+                                    .ToList();
+                        }
+                        SaveConversationHistory(conversationHistory, memoryPath);//Save memory after each assistant response.
+
+                        //Auto-generate summaries periodically.
+                        //Every 10 messages: generates compressed summary, persists summary to disk,
+                        //creates long-term conversational abstraction.
+                        if (conversationHistory.Count % 10 == 0)
+                        {
+                            string summary =
+                                GenerateConversationSummary(
+                                    conversationHistory);
+
+                            SaveConversationSummary(
+                                summary,
+                                summaryPath);
+
+                            Console.WriteLine(
+                                "\nConversation summary created.");
+                        }
+
+                        Console.WriteLine("\n--- RESPONSE ---");
+                        Console.WriteLine(responseText);
+
+                        //Hallucination warning
+                        if (LooksLikeHallucination(responseText))
+                        {
+                            Console.WriteLine("⚠️ Warning: response may contain speculation.");
+                        }
+                        Console.WriteLine();
+                        Console.WriteLine("DEBUG: Writing chat log...");
+                        loggingService.Log(activeProject, model, fullPrompt, responseText ?? "");
                     }
-
-                    Console.WriteLine("\n--- RESPONSE ---");
-                    Console.WriteLine(responseText);
-
-                    //Hallucination warning
-                    if (LooksLikeHallucination(responseText))
+                    catch (Exception ex)
                     {
-                        Console.WriteLine("⚠️ Warning: response may contain speculation.");
+                        Console.WriteLine($"ERROR: {ex}");
                     }
-                    Console.WriteLine();
-                    loggingService.Log(activeProject, model, fullPrompt, responseText ?? "");
                 }
             }
-
 
             if (mode == "2")
             {
@@ -263,7 +314,16 @@ namespace LocalAiClient
 
                 foreach (var file in files)
                 {
-                    var content = File.ReadAllText(file);
+                    string content;
+
+                    try
+                    {
+                        content = File.ReadAllText(file);
+                    }
+                    catch
+                    {
+                        continue;
+                    }
                     var chunks = ChunkFile(content);
 
                     for (int i = 0; i < chunks.Count; i++)
@@ -559,6 +619,11 @@ PATH: {file}
                 magB += b[i] * b[i];
             }
 
+            if (magA == 0 || magB == 0)
+            {
+                return 0;
+            }
+
             return dot / (Math.Sqrt(magA) * Math.Sqrt(magB));
         }
 
@@ -825,12 +890,11 @@ CHUNK: {x.record.ChunkIndex}
             Directory.CreateDirectory(
                 Path.GetDirectoryName(memoryPath)!);
 
-            const int maxMessages = 50;
             //IMPORTANT: memory will eventually grow too large (memory trimming).
-            if (history.Count > maxMessages)
+            if (history.Count > MaxConversationMessages)
             {
                 history = history
-                    .TakeLast(maxMessages)
+                    .TakeLast(MaxConversationMessages)
                     .ToList();
             }
 
@@ -853,8 +917,9 @@ CHUNK: {x.record.ChunkIndex}
 
             var queryWords = query
                 .ToLower()
-                .Split(' ',
-                    StringSplitOptions.RemoveEmptyEntries)
+                .Split(
+                [' ', '\n', '\r', '\t', '.', ',', ':', ';', '(', ')'],
+                StringSplitOptions.RemoveEmptyEntries)
                 .Where(w => w.Length > 2)
                 .Distinct();
 
@@ -931,6 +996,8 @@ CHUNK: {x.record.ChunkIndex}
                     {
                         WriteIndented = true
                     });
+
+            Directory.CreateDirectory(Path.GetDirectoryName(summaryPath)!);
 
             File.WriteAllText(summaryPath, output);
         }

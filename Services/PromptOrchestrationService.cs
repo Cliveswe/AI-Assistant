@@ -15,8 +15,7 @@ public class PromptOrchestrationService
 
         if (context.Length > maxContextChars)
         {
-            context =
-                context.Substring(0, maxContextChars);
+            context = context.Substring(0, maxContextChars);
         }
 
         var modelRules = model switch
