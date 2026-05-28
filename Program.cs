@@ -358,29 +358,6 @@ PATH: {file}
             }
         }
 
-        private static void Log(string model, string prompt, string response)
-        {
-            var logPath = Path.Combine("logs", "chatlog.txt");
-
-            Directory.CreateDirectory("logs");
-
-            var entry = $@"
-TIMESTAMP: {DateTime.Now:yyyy-MM-dd HH:mm:ss}
-MODEL: {model}
-PROMPT:
-{prompt}
-
-RESPONSE:
-{response}
-
-PROJECT:
-{activeProject}
-----------------------------------------
-";
-
-            File.AppendAllText(logPath, entry);
-        }
-
         // A suggestion function.
         private static string SuggestModel(string userInput)
         {
