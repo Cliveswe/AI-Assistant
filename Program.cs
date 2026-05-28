@@ -15,6 +15,7 @@ namespace LocalAiClient
     {
 
         private static RetrievalService retrievalService = new RetrievalService();
+        private static PromptOrchestrationService promptService = new PromptOrchestrationService();
 
         //Active project variable to maintain context across the application.
         //This allows us to keep separate indexes, memories, and summaries for
@@ -174,39 +175,12 @@ namespace LocalAiClient
                     //Inject summaries into prompt.
                     string summaryText = LoadRecentSummaries(summaryPath);
 
-                    string fullPrompt = $"""
-You are a senior software engineering assistant.
-
-STRICT RULES:
-- Answer ONLY using the provided CONTEXT
-- Reference filenames when possible
-- If the answer is not explicitly in the context, reply: "I don't know based on the provided code"
-- Do NOT guess
-- Do NOT infer missing details
-- Be precise and concise
-
-ACTIVE PROJECT:
-{activeProject}
-
----
-
-LONG-TERM MEMORY:
-{summaryText}
-
----
-CONVERSATION HISTORY:
-{conversationText}
-
----
-
-CONTEXT:
-{context}
-
----
-
-User request:
-{basePrompt}
-""";
+                    string fullPrompt = promptService.BuildPrompt(
+                        userInput,
+                        context,
+                        conversationText,
+                        summaryText,
+                        activeProject);
 
                     var request = new
                     {
