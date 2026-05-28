@@ -1,6 +1,7 @@
 ﻿//Ignore Spelling: ollama json codellama mixtral yyyy dev codebase
 
 using LocalAiClient.Models;
+using LocalAiClient.Services;
 using LocalAIClient.Services;
 using System.Text;
 using System.Text.Json;
@@ -23,6 +24,9 @@ namespace LocalAiClient
         {
             Timeout = TimeSpan.FromMinutes(10)
         };
+
+        private static LoggingService loggingService = new LoggingService();
+
         private static async Task Main()
         {
 
